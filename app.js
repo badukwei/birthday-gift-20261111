@@ -64,10 +64,29 @@ function renderQuestion(focus = false) {
     const button = element('button', 'answer');
     button.type = 'button';
     button.append(element('span', 'answer-index', String.fromCharCode(65 + i)), element('span', '', answer), element('span', 'answer-arrow', '↗'));
-    button.addEventListener('click', () => reveal(answer), { once: true });
+    button.addEventListener('click', () => {
+      if (memory.correctAnswer === null || memory.correctAnswer === i) {
+        reveal(answer);
+        return;
+      }
+      button.disabled = true;
+      button.classList.add('incorrect');
+      button.querySelector('.answer-arrow').textContent = '♡';
+      const heading = interaction.querySelector('h2');
+      heading.replaceChildren();
+      typeText(heading, memory.wrongReply);
+      interaction.querySelector('.hint').textContent = '再選一個答案就好，不扣分，也不趕時間。';
+      interaction.querySelector('.answer-feedback').textContent = memory.wrongReply;
+      if (!reducedMotion.matches) portrait.animate([
+        { transform: 'rotate(0)' }, { transform: 'rotate(-7deg)' },
+        { transform: 'rotate(7deg)' }, { transform: 'rotate(0)' },
+      ], { duration: 400 });
+    });
     answers.append(button);
   });
-  interaction.append(answers, element('p', 'hint', '沒有標準答案，只有屬於我們的回憶 ♡'));
+  const feedback = element('p', 'answer-feedback sr-only');
+  feedback.setAttribute('role', 'status');
+  interaction.append(answers, element('p', 'hint', memory.correctAnswer === null ? '這一題，每個答案都是我想要的 ♡' : '猜對了，就打開一張我們的照片 ♡'), feedback);
   renderProgress();
   if (focus) interaction.querySelector('h2').focus({ preventScroll: true });
 }
@@ -106,7 +125,7 @@ function reveal(answer) {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, { once: true });
   interaction.append(next);
-  if (last) interaction.append(element('p', 'hint', '五個小回憶，還有好多個明天。♡'));
+  if (last) interaction.append(element('p', 'hint', '生日快樂 ♡ 下一個生日，也要一起過。'));
   renderProgress();
   interaction.querySelector('h2').focus({ preventScroll: true });
 }
