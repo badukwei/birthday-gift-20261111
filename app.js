@@ -54,6 +54,7 @@ function bubble(text) {
 }
 
 function renderQuestion(focus = false) {
+  interaction.querySelector('video')?.pause();
   revealed = false;
   document.body.classList.remove('is-revealed');
   interaction.replaceChildren();
@@ -86,7 +87,7 @@ function renderQuestion(focus = false) {
   });
   const feedback = element('p', 'answer-feedback sr-only');
   feedback.setAttribute('role', 'status');
-  interaction.append(answers, element('p', 'hint', memory.correctAnswer === null ? '這一題，每個答案都是我想要的 ♡' : '猜對了，就打開一張我們的照片 ♡'), feedback);
+  interaction.append(answers, element('p', 'hint', memory.correctAnswer === null ? '這一題，每個答案都是我想要的 ♡' : memory.video ? '猜對了，就重播一段我們的回憶 ♡' : '猜對了，就打開一張我們的照片 ♡'), feedback);
   renderProgress();
   if (focus) interaction.querySelector('h2').focus({ preventScroll: true });
 }
@@ -104,7 +105,23 @@ function reveal(answer) {
   const card = element('figure', 'polaroid');
   const tape = element('span', 'tape');
   tape.setAttribute('aria-hidden', 'true');
-  const photo = element('img', 'memory-photo');
+  let photo;
+  if (memory.video) {
+    photo = element('video', 'memory-photo memory-video');
+    photo.controls = true;
+    photo.playsInline = true;
+    photo.preload = 'metadata';
+    photo.setAttribute('aria-label', memory.title);
+    photo.src = memory.video;
+    photo.addEventListener('error', () => {
+      const error = element('p', 'hint', '影片暫時無法播放，');
+      const link = element('a', '', '點這裡開啟影片');
+      link.href = memory.video;
+      error.append(link);
+      photo.after(error);
+    }, { once: true });
+  } else {
+  photo = element('img', 'memory-photo');
   photo.alt = memory.title;
   photo.src = memory.photo;
   photo.addEventListener('error', () => {
@@ -112,6 +129,7 @@ function reveal(answer) {
     placeholder.append(element('span', 'placeholder-flower', '✳'), element('span', 'placeholder-label', '這裡，留給我們的照片'), element('span', 'placeholder-number', `MEMORY No. ${String(current + 1).padStart(2, '0')}`));
     photo.replaceWith(placeholder);
   }, { once: true });
+  }
   const caption = element('figcaption');
   caption.append(element('span', 'photo-number', `0${current + 1} / OUR LITTLE MOMENTS`), element('h3', '', memory.title), element('p', '', memory.caption));
   card.append(tape, photo, caption);
